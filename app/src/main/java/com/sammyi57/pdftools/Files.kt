@@ -73,7 +73,7 @@ fun FilesTab() {
   val scope = rememberCoroutineScope()
   var folderPath by rememberSaveable { mutableStateOf<String?>(null) }
   var driveFolder by rememberSaveable { mutableStateOf<String?>(null) }
-  var place by rememberSaveable { mutableStateOf(Place.Saved) }
+  var place by rememberSaveable { mutableStateOf(Place.Phone) }
   val onDrive = place == Place.Drive
   var filter by rememberSaveable { mutableStateOf(Filter.All) }
   var query by rememberSaveable { mutableStateOf("") }
