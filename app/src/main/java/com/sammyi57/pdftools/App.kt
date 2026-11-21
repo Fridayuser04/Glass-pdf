@@ -272,21 +272,34 @@ private fun BottomNavigationBar() {
       .border(width = 0.7.dp, color = c.lineStrong),
     verticalAlignment = Alignment.CenterVertically,
   ) {
-    @Composable fun Item(icon: Int, label: String, selected: Boolean, action: () -> Unit) {
-      Column(
-        Modifier.weight(1f).fillMaxSize().tap(label = label, scaleTo = 0.97f, onClick = action),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-      ) {
-        Icon(icon, 23.dp, if (selected) c.accent else c.sub)
-        T(label, Type.caption, if (selected) c.accent else c.sub)
-      }
+    Column(
+      Modifier.weight(1f).fillMaxSize().tap(label = "Home", scaleTo = 0.97f) { nav.show(Tab.Tools) },
+      horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+    ) {
+      Icon(I.homeOutline, 23.dp, if (nav.tab == Tab.Tools) c.accent else c.sub)
+      T("Home", Type.caption, if (nav.tab == Tab.Tools) c.accent else c.sub)
     }
-    Item(I.homeOutline, "Home", nav.tab == Tab.Tools) { nav.show(Tab.Tools) }
-    Item(I.viewGridOutline, "All tools", nav.tab == Tab.Tools) { nav.show(Tab.Tools) }
-    Item(I.cameraOutline, "Scan", false) { nav.scan() }
-    Item(I.folderOutline, "Files", nav.tab == Tab.Files) { nav.show(Tab.Files) }
-    Item(I.cogOutline, "Settings", nav.tab == Tab.Settings) { nav.show(Tab.Settings) }
+    Column(
+      Modifier.weight(1f).fillMaxSize().tap(label = "Scan", scaleTo = 0.97f) { nav.scan() },
+      horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+    ) {
+      Icon(I.cameraOutline, 23.dp, c.sub)
+      T("Scan", Type.caption, c.sub)
+    }
+    Column(
+      Modifier.weight(1f).fillMaxSize().tap(label = "Files", scaleTo = 0.97f) { nav.show(Tab.Files) },
+      horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+    ) {
+      Icon(I.folderOutline, 23.dp, if (nav.tab == Tab.Files) c.accent else c.sub)
+      T("Files", Type.caption, if (nav.tab == Tab.Files) c.accent else c.sub)
+    }
+    Column(
+      Modifier.weight(1f).fillMaxSize().tap(label = "Settings", scaleTo = 0.97f) { nav.show(Tab.Settings) },
+      horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+    ) {
+      Icon(I.cogOutline, 23.dp, if (nav.tab == Tab.Settings) c.accent else c.sub)
+      T("Settings", Type.caption, if (nav.tab == Tab.Settings) c.accent else c.sub)
+    }
   }
 }
 
