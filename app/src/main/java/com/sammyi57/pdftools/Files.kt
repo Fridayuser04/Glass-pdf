@@ -338,6 +338,7 @@ fun PdfFileCard(
   onShare: () -> Unit,
   onMore: () -> Unit,
   waiting: Boolean,
+  showActions: Boolean = true,
 ) {
   val shape = RoundedCornerShape(20.dp)
   var preview by remember(file.path, file.modified) { mutableStateOf<Bitmap?>(null) }
@@ -399,14 +400,16 @@ fun PdfFileCard(
         }
         T("  ·  ${fmtSize(file.size)}", Type.small, c.sub, maxLines = 1)
       }
-      Row(
-        Modifier.fillMaxWidth().padding(top = 9.dp),
-        horizontalArrangement = Arrangement.End,
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        if (waiting) Icon(I.cloudUploadOutline, 17.dp, c.accent)
-        IconBtn(I.shareVariantOutline, 18.dp, c.sub, "Share", onClick = onShare)
-        IconBtn(I.dotsVertical, 18.dp, c.sub, "More", onClick = onMore)
+      if (showActions) {
+        Row(
+          Modifier.fillMaxWidth().padding(top = 9.dp),
+          horizontalArrangement = Arrangement.End,
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          if (waiting) Icon(I.cloudUploadOutline, 17.dp, c.accent)
+          IconBtn(I.shareVariantOutline, 18.dp, c.sub, "Share", onClick = onShare)
+          IconBtn(I.dotsVertical, 18.dp, c.sub, "More", onClick = onMore)
+        }
       }
     }
   }
