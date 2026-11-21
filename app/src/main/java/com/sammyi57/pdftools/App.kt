@@ -300,39 +300,49 @@ private fun ResumeBar(tool: Tool, files: Int) {
 @Composable
 private fun NavPill(haze: HazeState) {
   val nav = LocalNav.current
-  val slots = listOf<Pair<Tab?, Int>>(Tab.Tools to I.viewGridOutline, null to I.cameraPlusOutline, Tab.Files to I.folderOutline, Tab.Settings to I.cogOutline)
-  val labels = listOf("Tools", "Scan a document", "Files", "Settings")
-  val pill = CircleShape
+  val shape = RoundedCornerShape(24.dp)
   val glass = c.panel
-  // Black Cherry glass: enough colour to read over warm paper, see-through enough to show the blur.
-  val glassAlpha = if (c.dark) 0.55f else 0.68f
-  val onActive = Brand.cherry
-  // A light rim catching the edge of the glass, brighter at the top-left.
-  val rim = androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color.White.copy(alpha = 0.38f), Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.16f)))
-  BoxWithConstraints(
-    Modifier.padding(horizontal = 28.dp).fillMaxWidth().height(62.dp).shadow(10.dp, pill, ambientColor = Color.Black, spotColor = Color.Black)
-      .clip(pill)
+  val rim = androidx.compose.ui.graphics.Brush.linearGradient(
+    listOf(Color.White.copy(alpha = 0.34f), Color.White.copy(alpha = 0.07f), Color.White.copy(alpha = 0.18f)),
+  )
+  Box(
+    Modifier.padding(horizontal = 14.dp).fillMaxWidth().height(72.dp)
+      .shadow(16.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
+      .clip(shape)
       .hazeEffect(haze) {
-        blurRadius = 24.dp
+        blurRadius = 28.dp
         backgroundColor = glass
-        tints = listOf(HazeTint(glass.copy(alpha = glassAlpha)))
-        noiseFactor = 0.12f
+        tints = listOf(HazeTint(glass.copy(alpha = if (c.dark) 0.76f else 0.84f)))
+        noiseFactor = 0.10f
       }
-      .border(1.dp, rim, pill).padding(6.dp),
+      .border(1.dp, rim, shape).padding(horizontal = 12.dp, vertical = 5.dp),
   ) {
-    val slot = maxWidth / slots.size
-    val capsule = minOf(slot - 4.dp, 76.dp)
-    val active = slots.indexOfFirst { it.first == nav.tab }
-    val x by animateDpAsState(slot * active + (slot - capsule) / 2, spring(0.72f, Spring.StiffnessMediumLow), label = "pill")
-    Box(Modifier.offset(x = x).size(capsule, maxHeight).background(c.accent, CircleShape))
     Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-      slots.forEachIndexed { i, (tab, glyph) ->
-        val on = tab != null && nav.tab == tab
-        val tint by androidx.compose.animation.animateColorAsState(if (on) onActive else c.onPanel.copy(alpha = 0.78f), tween(220), label = "tint")
+      val homeOn = nav.tab == Tab.Tools
+      val filesOn = nav.tab == Tab.Files
+      Column(
+        Modifier.weight(1f).fillMaxSize().tap(shape = RoundedCornerShape(18.dp), label = "Home") { nav.show(Tab.Tools) },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+      ) {
+        Icon(I.homeOutline, 23.dp, if (homeOn) c.accent else c.onPanelSub)
+        T("Home", Type.caption, if (homeOn) c.accent else c.onPanelSub)
+      }
+      Box(Modifier.weight(1f).fillMaxSize(), contentAlignment = Alignment.Center) {
         Box(
-          Modifier.width(slot).fillMaxSize().tap(shape = CircleShape, scaleTo = 0.86f, label = labels[i]) { if (tab == null) nav.scan() else nav.show(tab) },
+          Modifier.offset(y = (-13).dp).size(70.dp).shadow(12.dp, CircleShape, spotColor = c.accent)
+            .background(c.accent, CircleShape)
+            .tap(shape = CircleShape, scaleTo = 0.91f, label = "Create or scan") { nav.scan() },
           contentAlignment = Alignment.Center,
-        ) { Icon(glyph, if (on) 19.dp else 18.dp, tint, label = labels[i]) }
+        ) { Icon(I.plus, 34.dp, Color.White) }
+      }
+      Column(
+        Modifier.weight(1f).fillMaxSize().tap(shape = RoundedCornerShape(18.dp), label = "Files") { nav.show(Tab.Files) },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+      ) {
+        Icon(I.folderOutline, 23.dp, if (filesOn) c.accent else c.onPanelSub)
+        T("Files", Type.caption, if (filesOn) c.accent else c.onPanelSub)
       }
     }
   }
