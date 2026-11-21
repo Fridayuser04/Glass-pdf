@@ -225,22 +225,32 @@ fun FilesTab() {
     ModalBottomSheet({ menu = null }, containerColor = c.surface) {
       Column(Modifier.padding(horizontal = 14.dp).padding(bottom = 18.dp).navigationBarsPadding()) {
         val title = when (m) { is Menu.OfFile -> m.f.name; is Menu.OfFolder -> m.f.name }
-        T(title, Type.bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), maxLines = 1)
+        T(title, Type.bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), maxLines = 1)
         val pick = { run: () -> Unit -> { menu = null; run() } }
+        if (m is Menu.OfFile) {
+          val f = m.f
+          Row(
+            Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 18.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+          ) {
+            QuickFileAction(I.deleteOutline, "Delete", danger = true) { pick { deleteFile(f) }() }
+            QuickFileAction(I.pencilOutline, "Rename") {
+              pick {
+                prompt = PromptSpec("Rename File", "Rename \"${f.name}\"", "File name", stem(f.name), "Save") { relinkPdf(f.path, renameFile(f, it)) }
+              }()
+            }
+            QuickFileAction(I.shareVariantOutline, "Share") { pick { share(f.path, f.name) }() }
+          }
+        }
         when (m) {
           is Menu.OfFile -> {
             val f = m.f
             scans[f.name]?.let { id -> MenuRow(I.fileDocumentEditOutline, "Edit scan", onClick = pick { nav.scan(id) }) }
-            MenuRow(I.shareVariantOutline, "Share", onClick = pick { share(f.path, f.name) })
             if (kindOf(f.name) == DocKind.Pdf) {
               MenuRow(I.fileWordOutline, "Save as Word doc", onClick = pick { exporting = f to true })
               MenuRow(I.fileImageOutline, "Save as JPEG", onClick = pick { exporting = f to false })
             }
-            MenuRow(I.pencilOutline, "Rename", onClick = pick {
-              prompt = PromptSpec("Rename File", "Rename \"${f.name}\"", "File name", stem(f.name), "Save") { relinkPdf(f.path, renameFile(f, it)) }
-            })
             MenuRow(I.folderMoveOutline, "Move to folder", onClick = pick { moving = f })
-            MenuRow(I.deleteOutline, "Delete", color = c.accent, onClick = pick { deleteFile(f) })
           }
           is Menu.OfFolder -> {
             MenuRow(I.pencilOutline, "Rename", onClick = pick {
@@ -298,6 +308,20 @@ fun FilesTab() {
   }
 
   exporting?.let { (pdf, word) -> ExportDialog(pdf, word) { exporting = null } }
+}
+
+@Composable
+private fun QuickFileAction(glyph: Int, label: String, danger: Boolean = false, onClick: () -> Unit) {
+  Column(
+    Modifier.width(88.dp).tap(shape = RoundedCornerShape(16.dp), scaleTo = 0.94f, label = label, onClick = onClick).padding(vertical = 4.dp),
+    horizontalAlignment = Alignment.CenterHorizontally,
+  ) {
+    Box(
+      Modifier.size(58.dp).background(c.sunken, RoundedCornerShape(17.dp)),
+      contentAlignment = Alignment.Center,
+    ) { Icon(glyph, 25.dp, if (danger) c.accent else c.sub) }
+    T(label, Type.label, if (danger) c.accent else c.ink, Modifier.padding(top = 7.dp))
+  }
 }
 
 /** Large document card inspired by the supplied Files reference. The preview is rendered from page one locally. */
