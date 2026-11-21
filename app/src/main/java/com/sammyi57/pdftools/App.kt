@@ -302,6 +302,7 @@ private fun NavPill(haze: HazeState) {
   val nav = LocalNav.current
   val shape = RoundedCornerShape(24.dp)
   val glass = c.panel
+  val darkTheme = c.dark
   val rim = androidx.compose.ui.graphics.Brush.linearGradient(
     listOf(Color.White.copy(alpha = 0.34f), Color.White.copy(alpha = 0.07f), Color.White.copy(alpha = 0.18f)),
   )
@@ -312,7 +313,7 @@ private fun NavPill(haze: HazeState) {
       .hazeEffect(haze) {
         blurRadius = 28.dp
         backgroundColor = glass
-        tints = listOf(HazeTint(glass.copy(alpha = if (c.dark) 0.76f else 0.84f)))
+        tints = listOf(HazeTint(glass.copy(alpha = if (darkTheme) 0.76f else 0.84f)))
         noiseFactor = 0.10f
       }
       .border(1.dp, rim, shape).padding(horizontal = 12.dp, vertical = 5.dp),
