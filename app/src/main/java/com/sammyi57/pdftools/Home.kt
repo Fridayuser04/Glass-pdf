@@ -234,9 +234,9 @@ private fun Stat(label: String, value: String) {
 @Composable
 private fun RecentPanel(recent: List<Saved>, onAll: () -> Unit) {
   val shape = RoundedCornerShape(Radius.card)
-  val ink = Brand.cherry
-  val dim = ink.copy(alpha = 0.62f)
-  Column(Modifier.padding(top = 12.dp).fillMaxWidth().clip(shape).background(Brand.cool, shape).grain().padding(start = 16.dp, end = 10.dp, top = 12.dp, bottom = 6.dp)) {
+  val ink = c.ink
+  val dim = c.sub
+  Column(Modifier.padding(top = 12.dp).fillMaxWidth().shadow(8.dp, shape).clip(shape).background(c.surface, shape).border(0.8.dp, c.lineStrong, shape).grain().padding(start = 16.dp, end = 10.dp, top = 12.dp, bottom = 6.dp)) {
     Row(verticalAlignment = Alignment.CenterVertically) {
       T("RECENT", Type.caption, dim, Modifier.weight(1f))
       T("All files", Type.small, dim, Modifier.tap(scaleTo = 0.92f, onClick = onAll).padding(horizontal = 6.dp, vertical = 2.dp))
