@@ -168,7 +168,6 @@ fun PdfViewerScreen(path: String, name: String) {
           IconBtn(I.arrowLeft, label = "Back") { nav.back() }
           Marquee(stem(name), Type.bold.copy(fontSize = Type.bold.fontSize * 1.1f), c.ink, Modifier.weight(1f).padding(horizontal = 4.dp))
           IconBtn(I.magnify, label = "Search", enabled = doc != null) { searching = true }
-          IconBtn(I.shareVariantOutline, label = "Share") { share(path, name) }
           IconBtn(I.openInNew, label = "Open in another app") { openExternally(path, name) }
         }
       }
@@ -188,18 +187,34 @@ fun PdfViewerScreen(path: String, name: String) {
       if (doc != null) {
         // The page you're on, and the way to every other: tap the number to jump, the grid for thumbnails.
         Row(
-          Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 16.dp)
-            .background(c.panel.copy(alpha = 0.92f), CircleShape).padding(4.dp),
+          Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 18.dp, vertical = 14.dp)
+            .fillMaxWidth().shadow(12.dp, RoundedCornerShape(24.dp))
+            .background(c.panel.copy(alpha = 0.94f), RoundedCornerShape(24.dp))
+            .border(0.8.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(24.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
           verticalAlignment = Alignment.CenterVertically,
         ) {
-          T(
-            "Page $page of $pages", Type.label, c.onPanel,
-            Modifier.tap(shape = CircleShape, scaleTo = 0.94f, label = "Go to page") { jumping = true }.padding(horizontal = 14.dp, vertical = 8.dp),
-          )
-          Box(
-            Modifier.size(36.dp).tap(shape = CircleShape, scaleTo = 0.9f, label = "Page thumbnails") { thumbs = true }.background(c.accent, CircleShape),
-            contentAlignment = Alignment.Center,
-          ) { Icon(I.viewGridOutline, 18.dp, Brand.cherry) }
+          Column(
+            Modifier.weight(1f).tap(shape = RoundedCornerShape(16.dp), label = "Page thumbnails") { thumbs = true }.padding(vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+          ) {
+            Icon(I.viewGridOutline, 22.dp, c.onPanel)
+            T("Pages", Type.caption, c.onPanelSub)
+          }
+          Column(
+            Modifier.weight(1.25f).tap(shape = RoundedCornerShape(16.dp), label = "Go to page") { jumping = true }.padding(vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+          ) {
+            T("$page / $pages", Type.label, c.onPanel)
+            T("Current page", Type.caption, c.onPanelSub)
+          }
+          Column(
+            Modifier.weight(1f).tap(shape = RoundedCornerShape(16.dp), label = "Share PDF") { share(path, name) }.padding(vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+          ) {
+            Icon(I.shareVariantOutline, 22.dp, c.onPanel)
+            T("Share", Type.caption, c.onPanelSub)
+          }
         }
       }
     }
