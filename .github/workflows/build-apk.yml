@@ -3,9 +3,11 @@ name: Build GLASS PDF APK
 on:
   push:
     branches: [glass-redesign]
-  pull_request:
-    branches: [master]
   workflow_dispatch:
+
+concurrency:
+  group: glass-pdf-apk
+  cancel-in-progress: true
 
 permissions:
   contents: read
