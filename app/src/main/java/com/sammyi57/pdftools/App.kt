@@ -330,7 +330,7 @@ private fun NavPill(haze: HazeState) {
       }
       Box(Modifier.weight(1f).fillMaxSize(), contentAlignment = Alignment.Center) {
         Box(
-          Modifier.offset(y = (-13).dp).size(70.dp).shadow(12.dp, CircleShape, spotColor = c.accent)
+          Modifier.size(64.dp).shadow(12.dp, CircleShape, spotColor = c.accent)
             .background(c.accent, CircleShape)
             .tap(shape = CircleShape, scaleTo = 0.91f, label = "Create or scan") { nav.scan() },
           contentAlignment = Alignment.Center,
