@@ -148,11 +148,7 @@ private val Emph = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 
 @Composable
 fun App() {
-  val dark = when (ThemeState.pref) {
-    ThemePref.System -> isSystemInDarkTheme()
-    ThemePref.Light -> false
-    ThemePref.Dark -> true
-  }
+  val dark = ThemeState.pref != ThemePref.Light
   val palette = if (dark) DarkPalette else LightPalette
   val view = LocalView.current
   LaunchedEffect(dark) {
@@ -235,16 +231,14 @@ private fun MainShell() {
   val draft = Drafts.current
   val draftTool = draft?.let { toolById(it.tool) }
   val holder = rememberSaveableStateHolder()
-  val haze = rememberHazeState() // the tabs are what the bar blurs as they scroll under it
   Box(Modifier.fillMaxSize().background(c.bg)) {
-    CompositionLocalProvider(LocalBottomRoom provides if (draftTool != null) 180.dp else 112.dp) {
+    CompositionLocalProvider(LocalBottomRoom provides if (draftTool != null) 154.dp else 76.dp) {
       AnimatedContent(
-        nav.tab, Modifier.hazeSource(haze), label = "tab",
-        // Slides the way the tab bar reads: a tab to the right comes in from the right and pushes this one left.
+        nav.tab, Modifier, label = "tab",
         transitionSpec = {
           val dir = if (targetState.ordinal > initialState.ordinal) 1 else -1
-          (slideInHorizontally(tween(340, easing = Emph)) { it * dir / 3 } + fadeIn(tween(240, 40))) togetherWith
-            (slideOutHorizontally(tween(340, easing = Emph)) { -it * dir / 3 } + fadeOut(tween(160)))
+          (fadeIn(tween(170)) + slideInHorizontally(tween(220)) { it * dir / 12 }) togetherWith
+            (fadeOut(tween(130)) + slideOutHorizontally(tween(180)) { -it * dir / 16 })
         },
       ) { t ->
         holder.SaveableStateProvider(t.name) {
@@ -256,7 +250,7 @@ private fun MainShell() {
         }
       }
     }
-    Column(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 14.dp)) {
+    Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding()) {
       AnimatedVisibility(
         draftTool != null,
         enter = slideInVertically(spring(0.75f, Spring.StiffnessMediumLow)) { it } + fadeIn(),
@@ -264,8 +258,35 @@ private fun MainShell() {
       ) {
         if (draft != null && draftTool != null) ResumeBar(draftTool, draft.files.size)
       }
-      NavPill(haze)
+      BottomNavigationBar()
     }
+  }
+}
+
+@Composable
+private fun BottomNavigationBar() {
+  val nav = LocalNav.current
+  Row(
+    Modifier.fillMaxWidth().height(66.dp)
+      .background(c.surface)
+      .border(width = 0.7.dp, color = c.lineStrong),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    @Composable fun Item(icon: Int, label: String, selected: Boolean, action: () -> Unit) {
+      Column(
+        Modifier.weight(1f).fillMaxSize().tap(label = label, scaleTo = 0.97f, onClick = action),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+      ) {
+        Icon(icon, 23.dp, if (selected) c.accent else c.sub)
+        T(label, Type.caption, if (selected) c.accent else c.sub)
+      }
+    }
+    Item(I.homeOutline, "Home", nav.tab == Tab.Tools) { nav.show(Tab.Tools) }
+    Item(I.viewGridOutline, "All tools", nav.tab == Tab.Tools) { nav.show(Tab.Tools) }
+    Item(I.cameraOutline, "Scan", false) { nav.scan() }
+    Item(I.folderOutline, "Files", nav.tab == Tab.Files) { nav.show(Tab.Files) }
+    Item(I.cogOutline, "Settings", nav.tab == Tab.Settings) { nav.show(Tab.Settings) }
   }
 }
 
@@ -292,60 +313,6 @@ private fun ResumeBar(tool: Tool, files: Int) {
     }
     T("Discard", Type.label, c.sub, Modifier.tap(scaleTo = 0.9f) { confirming = true }.padding(horizontal = 10.dp, vertical = 8.dp))
     Box(Modifier.background(c.ink, CircleShape).padding(horizontal = 14.dp, vertical = 8.dp)) { T("Open", Type.label, c.onInk) }
-  }
-}
-
-// The floating pill from the reference, in frosted glass: the page blurs behind it and a wide orange capsule slides to
-// the open tab. The camera is one more icon in the row; it opens the scanner instead of a tab, so it never lights up.
-@Composable
-private fun NavPill(haze: HazeState) {
-  val nav = LocalNav.current
-  val shape = RoundedCornerShape(24.dp)
-  val glass = c.panel
-  val darkTheme = c.dark
-  val rim = androidx.compose.ui.graphics.Brush.linearGradient(
-    listOf(Color.White.copy(alpha = 0.34f), Color.White.copy(alpha = 0.07f), Color.White.copy(alpha = 0.18f)),
-  )
-  Box(
-    Modifier.padding(horizontal = 14.dp).fillMaxWidth().height(72.dp)
-      .shadow(16.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
-      .clip(shape)
-      .hazeEffect(haze) {
-        blurRadius = 28.dp
-        backgroundColor = glass
-        tints = listOf(HazeTint(glass.copy(alpha = if (darkTheme) 0.76f else 0.84f)))
-        noiseFactor = 0.10f
-      }
-      .border(1.dp, rim, shape).padding(horizontal = 12.dp, vertical = 5.dp),
-  ) {
-    Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-      val homeOn = nav.tab == Tab.Tools
-      val filesOn = nav.tab == Tab.Files
-      Column(
-        Modifier.weight(1f).fillMaxSize().tap(shape = RoundedCornerShape(18.dp), label = "Home") { nav.show(Tab.Tools) },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-      ) {
-        Icon(I.homeOutline, 23.dp, if (homeOn) c.accent else c.onPanelSub)
-        T("Home", Type.caption, if (homeOn) c.accent else c.onPanelSub)
-      }
-      Box(Modifier.weight(1f).fillMaxSize(), contentAlignment = Alignment.Center) {
-        Box(
-          Modifier.size(64.dp).shadow(12.dp, CircleShape, spotColor = c.accent)
-            .background(c.accent, CircleShape)
-            .tap(shape = CircleShape, scaleTo = 0.91f, label = "Create or scan") { nav.scan() },
-          contentAlignment = Alignment.Center,
-        ) { Icon(I.plus, 34.dp, Color.White) }
-      }
-      Column(
-        Modifier.weight(1f).fillMaxSize().tap(shape = RoundedCornerShape(18.dp), label = "Files") { nav.show(Tab.Files) },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-      ) {
-        Icon(I.folderOutline, 23.dp, if (filesOn) c.accent else c.onPanelSub)
-        T("Files", Type.caption, if (filesOn) c.accent else c.onPanelSub)
-      }
-    }
   }
 }
 
