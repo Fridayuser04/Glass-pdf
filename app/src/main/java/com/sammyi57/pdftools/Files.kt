@@ -1,5 +1,17 @@
 package com.sammyi57.pdftools
 
+import androidx.compose.ui.layout.ContentScale
+
+import androidx.compose.ui.graphics.asImageBitmap
+
+import androidx.compose.foundation.Image
+
+import android.os.ParcelFileDescriptor
+
+import android.graphics.pdf.PdfRenderer
+
+import android.graphics.Bitmap
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -37,11 +49,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 private enum class Filter(val label: String) { All("All"), Pdf("PDF"), Zip("ZIP"), Recent("Recent") }
 
@@ -61,7 +75,7 @@ fun FilesTab() {
   val scope = rememberCoroutineScope()
   var folderPath by rememberSaveable { mutableStateOf<String?>(null) }
   var driveFolder by rememberSaveable { mutableStateOf<String?>(null) }
-  var place by rememberSaveable { mutableStateOf(Place.Saved) }
+  var place by rememberSaveable { mutableStateOf(Place.Phone) }
   val onDrive = place == Place.Drive
   var filter by rememberSaveable { mutableStateOf(Filter.All) }
   var query by rememberSaveable { mutableStateOf("") }
@@ -131,7 +145,14 @@ fun FilesTab() {
       }
       LargeTitle(folderName, if (onDrive) "In Google Drive" else subtitle)
     } else {
-      LargeTitle("Files", when (place) { Place.Drive -> "Synced with Google Drive"; Place.Phone -> "Every PDF on this phone"; Place.Saved -> subtitle })
+      Row(
+        Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        T("Files", Type.largeTitle, modifier = Modifier.weight(1f))
+        IconBtn(I.cogOutline, 22.dp, c.ink, "Settings") { nav.show(Tab.Settings) }
+      }
+      if (!subtitle.isNullOrEmpty()) T(subtitle, Type.small, c.sub, Modifier.padding(bottom = 10.dp))
     }
 
     // Saved / Phone / Google Drive, only at the top level: inside a folder the subtitle already says which side it is.
@@ -190,17 +211,15 @@ fun FilesTab() {
             }
             byDay(filtered) { it.modified }.forEachIndexed { gi, (label, items) ->
               GroupLabel(label, first = gi == 0)
-              Group {
-                items.forEachIndexed { i, f ->
-                  ListRow(
-                    stem(f.name), first = i == 0, lead = { DocGlyph(kindOf(f.name)) }, marquee = true,
-                    subtitle = "${fmtSize(f.size)} · ${fmtTime(f.modified)}", onClick = { openFile(f.path, f.name) }, onLongClick = { menu = Menu.OfFile(f) },
-                  ) {
-                    // Only files still waiting to upload get a cloud: "Synced" is the normal state.
-                    if (Backup.waiting(f.path, f.name)) Icon(I.cloudUploadOutline, 17.dp, c.accent)
-                    IconBtn(I.dotsVertical, color = c.sub, label = "More") { menu = Menu.OfFile(f) }
-                  }
-                }
+              items.forEachIndexed { i, f ->
+                PdfFileCard(
+                  file = f,
+                  first = i == 0,
+                  onOpen = { openFile(f.path, f.name) },
+                  onShare = { share(f.path, f.name) },
+                  onMore = { menu = Menu.OfFile(f) },
+                  waiting = Backup.waiting(f.path, f.name),
+                )
               }
             }
           }
@@ -213,22 +232,32 @@ fun FilesTab() {
     ModalBottomSheet({ menu = null }, containerColor = c.surface) {
       Column(Modifier.padding(horizontal = 14.dp).padding(bottom = 18.dp).navigationBarsPadding()) {
         val title = when (m) { is Menu.OfFile -> m.f.name; is Menu.OfFolder -> m.f.name }
-        T(title, Type.bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), maxLines = 1)
+        T(title, Type.bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), maxLines = 1)
         val pick = { run: () -> Unit -> { menu = null; run() } }
+        if (m is Menu.OfFile) {
+          val f = m.f
+          Row(
+            Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 18.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+          ) {
+            QuickFileAction(I.deleteOutline, "Delete", danger = true) { pick { deleteFile(f) }() }
+            QuickFileAction(I.pencilOutline, "Rename") {
+              pick {
+                prompt = PromptSpec("Rename File", "Rename \"${f.name}\"", "File name", stem(f.name), "Save") { relinkPdf(f.path, renameFile(f, it)) }
+              }()
+            }
+            QuickFileAction(I.shareVariantOutline, "Share") { pick { share(f.path, f.name) }() }
+          }
+        }
         when (m) {
           is Menu.OfFile -> {
             val f = m.f
             scans[f.name]?.let { id -> MenuRow(I.fileDocumentEditOutline, "Edit scan", onClick = pick { nav.scan(id) }) }
-            MenuRow(I.shareVariantOutline, "Share", onClick = pick { share(f.path, f.name) })
             if (kindOf(f.name) == DocKind.Pdf) {
               MenuRow(I.fileWordOutline, "Save as Word doc", onClick = pick { exporting = f to true })
               MenuRow(I.fileImageOutline, "Save as JPEG", onClick = pick { exporting = f to false })
             }
-            MenuRow(I.pencilOutline, "Rename", onClick = pick {
-              prompt = PromptSpec("Rename File", "Rename \"${f.name}\"", "File name", stem(f.name), "Save") { relinkPdf(f.path, renameFile(f, it)) }
-            })
             MenuRow(I.folderMoveOutline, "Move to folder", onClick = pick { moving = f })
-            MenuRow(I.deleteOutline, "Delete", color = c.accent, onClick = pick { deleteFile(f) })
           }
           is Menu.OfFolder -> {
             MenuRow(I.pencilOutline, "Rename", onClick = pick {
@@ -286,6 +315,106 @@ fun FilesTab() {
   }
 
   exporting?.let { (pdf, word) -> ExportDialog(pdf, word) { exporting = null } }
+}
+
+@Composable
+private fun QuickFileAction(glyph: Int, label: String, danger: Boolean = false, onClick: () -> Unit) {
+  Column(
+    Modifier.width(88.dp).tap(shape = RoundedCornerShape(16.dp), scaleTo = 0.94f, label = label, onClick = onClick).padding(vertical = 4.dp),
+    horizontalAlignment = Alignment.CenterHorizontally,
+  ) {
+    Box(
+      Modifier.size(58.dp).background(c.sunken, RoundedCornerShape(17.dp)),
+      contentAlignment = Alignment.Center,
+    ) { Icon(glyph, 25.dp, if (danger) c.accent else c.sub) }
+    T(label, Type.label, if (danger) c.accent else c.ink, Modifier.padding(top = 7.dp))
+  }
+}
+
+/** Large document card inspired by the supplied Files reference. The preview is rendered from page one locally. */
+@Composable
+fun PdfFileCard(
+  file: Saved,
+  first: Boolean,
+  onOpen: () -> Unit,
+  onShare: () -> Unit,
+  onMore: () -> Unit,
+  waiting: Boolean,
+  showActions: Boolean = true,
+) {
+  val shape = RoundedCornerShape(20.dp)
+  var preview by remember(file.path, file.modified) { mutableStateOf<Bitmap?>(null) }
+  LaunchedEffect(file.path, file.modified) {
+    preview = withContext(Dispatchers.IO) {
+      runCatching {
+        val descriptor = ParcelFileDescriptor.open(File(file.path), ParcelFileDescriptor.MODE_READ_ONLY)
+        descriptor.use { fd ->
+          val renderer = PdfRenderer(fd)
+          try {
+            if (renderer.pageCount < 1) null else {
+              val page = renderer.openPage(0)
+              try {
+                val width = 220
+                val height = (width * page.height.toFloat() / page.width).toInt().coerceAtLeast(1)
+                Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
+                  bitmap.eraseColor(android.graphics.Color.WHITE)
+                  page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                }
+              } finally {
+                page.close()
+              }
+            }
+          } finally {
+            renderer.close()
+          }
+        }
+      }.getOrNull()
+    }
+  }
+  Row(
+    Modifier.fillMaxWidth().padding(top = if (first) 4.dp else 10.dp)
+      .shadow(5.dp, shape).clip(shape)
+      .background(c.surface, shape).border(0.7.dp, c.lineStrong, shape)
+      .tap(shape = shape, scaleTo = 0.985f, label = "Open ${stem(file.name)}", onClick = onOpen)
+      .padding(10.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Box(
+      Modifier.size(width = 86.dp, height = 108.dp).clip(RoundedCornerShape(14.dp))
+        .background(c.sunken),
+      contentAlignment = Alignment.Center,
+    ) {
+      if (preview != null) {
+        Image(preview!!.asImageBitmap(), "Preview of ${file.name}", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+      } else {
+        DocGlyph(kindOf(file.name), 54.dp)
+      }
+      Box(
+        Modifier.align(Alignment.TopEnd).background(c.panel, RoundedCornerShape(bottomStart = 10.dp))
+          .padding(horizontal = 8.dp, vertical = 4.dp),
+      ) { T(kindOf(file.name).name.uppercase(), Type.caption, c.onPanel) }
+    }
+    Column(Modifier.weight(1f).padding(start = 14.dp)) {
+      T(stem(file.name), Type.item, c.ink, maxLines = 2)
+      Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.background(c.sunken, RoundedCornerShape(6.dp)).padding(horizontal = 7.dp, vertical = 3.dp)) {
+          T(fmtDate(file.modified), Type.caption, c.ink)
+        }
+        T("  ·  ${fmtSize(file.size)}", Type.small, c.sub, maxLines = 1)
+      }
+      if (showActions) {
+        Row(
+          Modifier.fillMaxWidth().padding(top = 9.dp),
+          horizontalArrangement = Arrangement.End,
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          if (waiting) Icon(I.cloudUploadOutline, 17.dp, c.accent)
+          IconBtn(I.shareVariantOutline, 18.dp, c.sub, "Share", onClick = onShare)
+          IconBtn(I.dotsVertical, 18.dp, c.sub, "More", onClick = onMore)
+        }
+      }
+    }
+  }
 }
 
 private val FOLDER_CARD = 128.dp

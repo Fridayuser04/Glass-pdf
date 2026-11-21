@@ -15,13 +15,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.io.File
 
-// Three colours: Tangerine is the one sharp accent, Black Cherry is the ink (text, primary buttons, the tab bar), and
-// Cool Blue is the quiet second surface (the Recent card, the hero's words). Light is warm paper; dark is a
-// cherry-tinted near-black. Loud surfaces are a radial glow with film grain, not a glossy linear gradient.
+// Cool blue is the primary accent; deep navy anchors text and navigation. Light is a clean blue-tinted
+// paper surface, while dark uses layered midnight blues. Glass panels use translucent blue-grey surfaces.
 object Brand {
-  val tangerine = Color(0xFFFF5C34)
-  val cherry = Color(0xFF351E28)
-  val cool = Color(0xFFD7EFFF)
+  val tangerine = Color(0xFF4D9FFF) // Electric blue accent for the AMOLED interface.
+  val cherry = Color(0xFF050608)
+  val cool = Color(0xFFB9D9FF)
 }
 
 @Immutable
@@ -47,38 +46,37 @@ data class Palette(
 )
 
 val LightPalette = Palette(
-  bg = Color(0xFFF6F2EE), surface = Color(0xFFFFFFFF), sunken = Color(0xFFEFE9E4), page = Color(0xFFFFFFFF),
-  ink = Brand.cherry, sub = Color(0xFF7B6870), faint = Color(0xFFB4A6AC), line = Color(0xFFE9E1DC),
-  lineStrong = Color(0xFFD9CEC9), accent = Brand.tangerine, accentSoft = Color(0xFFFFE4DB), accentInk = Color(0xFFB83A1C),
+  bg = Color(0xFFF3F7FC), surface = Color(0xF2FFFFFF), sunken = Color(0xFFEAF1F8), page = Color(0xFFFFFFFF),
+  ink = Brand.cherry, sub = Color(0xFF63788F), faint = Color(0xFF9EAFBF), line = Color(0xFFDDE7F0),
+  lineStrong = Color(0xFFC9D8E7), accent = Brand.tangerine, accentSoft = Color(0xFFDCEEFF), accentInk = Color(0xFF155AA6),
   onInk = Color(0xFFFFFFFF),
-  hero = listOf(Brand.cherry, Color(0xFF8C2F2A), Brand.tangerine),
-  panel = Brand.cherry, onPanel = Color(0xFFFFFFFF), onPanelSub = Color(0xFFCDB9C2),
+  hero = listOf(Color(0xFF102A43), Color(0xFF175C9E), Color(0xFF3186E8)),
+  panel = Color(0xE6102A43), onPanel = Color(0xFFFFFFFF), onPanelSub = Color(0xFFB8D1E9),
   dark = false,
 )
 
-// Dark is a neutral warm near-black (after Poetica), not a cherry tint: Tangerine is the only colour in it.
+// Midnight blue keeps the glass surfaces distinct without losing contrast.
 val DarkPalette = Palette(
-  bg = Color(0xFF111110), surface = Color(0xFF1A1A18), sunken = Color(0xFF232321), page = Color(0xFF262624),
-  ink = Color(0xFFEDEDEB), sub = Color(0xFF9C9C99), faint = Color(0xFF6B6A66), line = Color(0xFF2A2A27),
-  lineStrong = Color(0xFF383834), accent = Color(0xFFFF6A45), accentSoft = Color(0xFF2B231F), accentInk = Color(0xFFFFB7A2),
-  onInk = Color(0xFF111110),
-  hero = listOf(Color(0xFF1C1B19), Color(0xFF6B2A1E), Brand.tangerine), // near-black, the glow alone carries the colour
-  panel = Color(0xFF1A1A18), onPanel = Color(0xFFEDEDEB), onPanelSub = Color(0xFF9C9C99),
+  bg = Color(0xFF000000), surface = Color(0xFF0D0F12), sunken = Color(0xFF15191F), page = Color(0xFF20252D),
+  ink = Color(0xFFF7F9FC), sub = Color(0xFF9AA4B2), faint = Color(0xFF626D7B), line = Color(0xFF20252D),
+  lineStrong = Color(0xFF2B323C), accent = Color(0xFF4D9FFF), accentSoft = Color(0xFF10243A), accentInk = Color(0xFFB9D9FF),
+  onInk = Color(0xFF000000),
+  hero = listOf(Color(0xFF080B10), Color(0xFF101B2A), Color(0xFF173B60)),
+  panel = Color(0xFF0D0F12), onPanel = Color(0xFFF7F9FC), onPanelSub = Color(0xFF9AA4B2),
   dark = true,
 )
 
-// The scanner is its own dark, camera-style surface in both themes: the dark palette's near-blacks, with Tangerine for
-// detection and actions (and Black Cherry on top of it).
+// The scanner keeps its camera-style dark surface, with blue for detection and actions.
 object ScanUi {
-  val bg = Color(0xFF0B0B0A)
-  val panel = Color(0xFF1A1A18)
-  val raised = Color(0xFF2A2A27)
+  val bg = Color(0xFF07111E)
+  val panel = Color(0xFF111F30)
+  val raised = Color(0xFF20344A)
   val text = Color(0xFFFFFFFF)
-  val dim = Color(0xFF9C9C99)
-  val line = Color(0xFF2A2A27)
-  val accent = Brand.tangerine
-  val accentSoft = Color(0x38FF5C34)
-  val onAccent = Brand.cherry
+  val dim = Color(0xFF9BB0C7)
+  val line = Color(0xFF2A4058)
+  val accent = Color(0xFF66AEFF)
+  val accentSoft = Color(0x3866AEFF)
+  val onAccent = Color(0xFF081522)
   val scrim = Color(0x99000000)
 }
 
@@ -110,8 +108,8 @@ object Type {
   val num = s(12.5f, FontWeight.Medium)
   val med = s(13.5f, FontWeight.Medium)
   val bold = s(14f, FontWeight.SemiBold)
-  val big = s(26f, FontWeight.SemiBold, 32f, -0.6f) // the reference's big numbers: sizes and counts
-  val caption = s(11.5f, FontWeight.Medium, 16f, 1.4f) // uppercase section labels, spaced out
+  val big = s(26f, FontWeight.SemiBold, 32f, -0.6f)
+  val caption = s(11.5f, FontWeight.Medium, 16f, 1.4f)
 }
 
 // Deliberately not one radius for everything: small things are tighter.

@@ -148,11 +148,7 @@ private val Emph = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 
 @Composable
 fun App() {
-  val dark = when (ThemeState.pref) {
-    ThemePref.System -> isSystemInDarkTheme()
-    ThemePref.Light -> false
-    ThemePref.Dark -> true
-  }
+  val dark = ThemeState.pref != ThemePref.Light
   val palette = if (dark) DarkPalette else LightPalette
   val view = LocalView.current
   LaunchedEffect(dark) {
@@ -235,16 +231,14 @@ private fun MainShell() {
   val draft = Drafts.current
   val draftTool = draft?.let { toolById(it.tool) }
   val holder = rememberSaveableStateHolder()
-  val haze = rememberHazeState() // the tabs are what the bar blurs as they scroll under it
   Box(Modifier.fillMaxSize().background(c.bg)) {
-    CompositionLocalProvider(LocalBottomRoom provides if (draftTool != null) 180.dp else 112.dp) {
+    CompositionLocalProvider(LocalBottomRoom provides if (draftTool != null) 154.dp else 76.dp) {
       AnimatedContent(
-        nav.tab, Modifier.hazeSource(haze), label = "tab",
-        // Slides the way the tab bar reads: a tab to the right comes in from the right and pushes this one left.
+        nav.tab, Modifier, label = "tab",
         transitionSpec = {
           val dir = if (targetState.ordinal > initialState.ordinal) 1 else -1
-          (slideInHorizontally(tween(340, easing = Emph)) { it * dir / 3 } + fadeIn(tween(240, 40))) togetherWith
-            (slideOutHorizontally(tween(340, easing = Emph)) { -it * dir / 3 } + fadeOut(tween(160)))
+          (fadeIn(tween(170)) + slideInHorizontally(tween(220)) { it * dir / 12 }) togetherWith
+            (fadeOut(tween(130)) + slideOutHorizontally(tween(180)) { -it * dir / 16 })
         },
       ) { t ->
         holder.SaveableStateProvider(t.name) {
@@ -256,7 +250,7 @@ private fun MainShell() {
         }
       }
     }
-    Column(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 14.dp)) {
+    Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding()) {
       AnimatedVisibility(
         draftTool != null,
         enter = slideInVertically(spring(0.75f, Spring.StiffnessMediumLow)) { it } + fadeIn(),
@@ -264,7 +258,47 @@ private fun MainShell() {
       ) {
         if (draft != null && draftTool != null) ResumeBar(draftTool, draft.files.size)
       }
-      NavPill(haze)
+      BottomNavigationBar()
+    }
+  }
+}
+
+@Composable
+private fun BottomNavigationBar() {
+  val nav = LocalNav.current
+  Row(
+    Modifier.fillMaxWidth().height(66.dp)
+      .background(c.surface)
+      .border(width = 0.7.dp, color = c.lineStrong),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Column(
+      Modifier.weight(1f).fillMaxSize().tap(label = "Home", scaleTo = 0.97f) { nav.show(Tab.Tools) },
+      horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+    ) {
+      Icon(I.homeOutline, 23.dp, if (nav.tab == Tab.Tools) c.accent else c.sub)
+      T("Home", Type.caption, if (nav.tab == Tab.Tools) c.accent else c.sub)
+    }
+    Column(
+      Modifier.weight(1f).fillMaxSize().tap(label = "Scan", scaleTo = 0.97f) { nav.scan() },
+      horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+    ) {
+      Icon(I.cameraOutline, 23.dp, c.sub)
+      T("Scan", Type.caption, c.sub)
+    }
+    Column(
+      Modifier.weight(1f).fillMaxSize().tap(label = "Files", scaleTo = 0.97f) { nav.show(Tab.Files) },
+      horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+    ) {
+      Icon(I.folderOutline, 23.dp, if (nav.tab == Tab.Files) c.accent else c.sub)
+      T("Files", Type.caption, if (nav.tab == Tab.Files) c.accent else c.sub)
+    }
+    Column(
+      Modifier.weight(1f).fillMaxSize().tap(label = "Settings", scaleTo = 0.97f) { nav.show(Tab.Settings) },
+      horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+    ) {
+      Icon(I.cogOutline, 23.dp, if (nav.tab == Tab.Settings) c.accent else c.sub)
+      T("Settings", Type.caption, if (nav.tab == Tab.Settings) c.accent else c.sub)
     }
   }
 }
@@ -292,49 +326,6 @@ private fun ResumeBar(tool: Tool, files: Int) {
     }
     T("Discard", Type.label, c.sub, Modifier.tap(scaleTo = 0.9f) { confirming = true }.padding(horizontal = 10.dp, vertical = 8.dp))
     Box(Modifier.background(c.ink, CircleShape).padding(horizontal = 14.dp, vertical = 8.dp)) { T("Open", Type.label, c.onInk) }
-  }
-}
-
-// The floating pill from the reference, in frosted glass: the page blurs behind it and a wide orange capsule slides to
-// the open tab. The camera is one more icon in the row; it opens the scanner instead of a tab, so it never lights up.
-@Composable
-private fun NavPill(haze: HazeState) {
-  val nav = LocalNav.current
-  val slots = listOf<Pair<Tab?, Int>>(Tab.Tools to I.viewGridOutline, null to I.cameraPlusOutline, Tab.Files to I.folderOutline, Tab.Settings to I.cogOutline)
-  val labels = listOf("Tools", "Scan a document", "Files", "Settings")
-  val pill = CircleShape
-  val glass = c.panel
-  // Black Cherry glass: enough colour to read over warm paper, see-through enough to show the blur.
-  val glassAlpha = if (c.dark) 0.55f else 0.68f
-  val onActive = Brand.cherry
-  // A light rim catching the edge of the glass, brighter at the top-left.
-  val rim = androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color.White.copy(alpha = 0.38f), Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.16f)))
-  BoxWithConstraints(
-    Modifier.padding(horizontal = 28.dp).fillMaxWidth().height(62.dp).shadow(10.dp, pill, ambientColor = Color.Black, spotColor = Color.Black)
-      .clip(pill)
-      .hazeEffect(haze) {
-        blurRadius = 24.dp
-        backgroundColor = glass
-        tints = listOf(HazeTint(glass.copy(alpha = glassAlpha)))
-        noiseFactor = 0.12f
-      }
-      .border(1.dp, rim, pill).padding(6.dp),
-  ) {
-    val slot = maxWidth / slots.size
-    val capsule = minOf(slot - 4.dp, 76.dp)
-    val active = slots.indexOfFirst { it.first == nav.tab }
-    val x by animateDpAsState(slot * active + (slot - capsule) / 2, spring(0.72f, Spring.StiffnessMediumLow), label = "pill")
-    Box(Modifier.offset(x = x).size(capsule, maxHeight).background(c.accent, CircleShape))
-    Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-      slots.forEachIndexed { i, (tab, glyph) ->
-        val on = tab != null && nav.tab == tab
-        val tint by androidx.compose.animation.animateColorAsState(if (on) onActive else c.onPanel.copy(alpha = 0.78f), tween(220), label = "tint")
-        Box(
-          Modifier.width(slot).fillMaxSize().tap(shape = CircleShape, scaleTo = 0.86f, label = labels[i]) { if (tab == null) nav.scan() else nav.show(tab) },
-          contentAlignment = Alignment.Center,
-        ) { Icon(glyph, if (on) 19.dp else 18.dp, tint, label = labels[i]) }
-      }
-    }
   }
 }
 
