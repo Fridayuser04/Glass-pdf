@@ -143,7 +143,14 @@ fun FilesTab() {
       }
       LargeTitle(folderName, if (onDrive) "In Google Drive" else subtitle)
     } else {
-      LargeTitle("Files", when (place) { Place.Drive -> "Synced with Google Drive"; Place.Phone -> "Every PDF on this phone"; Place.Saved -> subtitle })
+      Row(
+        Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        T("Files", Type.largeTitle, modifier = Modifier.weight(1f))
+        IconBtn(I.cogOutline, 22.dp, c.ink, "Settings") { nav.show(Tab.Settings) }
+      }
+      if (!subtitle.isNullOrEmpty()) T(subtitle, Type.small, c.sub, Modifier.padding(bottom = 10.dp))
     }
 
     // Saved / Phone / Google Drive, only at the top level: inside a folder the subtitle already says which side it is.
