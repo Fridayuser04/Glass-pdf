@@ -161,20 +161,16 @@ fun PhoneFiles(query: String) {
     byDay(hits.take(MAX_SHOWN)) { it.modified }.forEachIndexed { gi, (label, items) ->
       if (gi == 0) GroupLabel(label, if (busy) "Scanning…" else "Rescan", { if (!busy) scope.launch { rescan() } }, first = true)
       else GroupLabel(label)
-      Group {
-        items.forEachIndexed { i, f ->
-          ListRow(
-            stem(f.name), first = i == 0, lead = { DocGlyph(kindOf(f.name)) }, marquee = true,
-            subtitle = File(f.path).parentFile?.name ?: "",
-            onClick = { scope.launch { importIncoming(Uri.fromFile(File(f.path)))?.let { openFile(it.path, it.name) } } },
-          ) {
-            // Size over time in a fixed-width column, so every row lines up at the right edge.
-            Column(Modifier.width(62.dp), horizontalAlignment = Alignment.End) {
-              T(fmtSize(f.size), Type.med.copy(fontSize = 12.5.sp, lineHeight = 17.sp), c.ink, maxLines = 1)
-              T(fmtTime(f.modified), Type.small.copy(fontSize = 11.5.sp, lineHeight = 16.sp), c.sub, maxLines = 1)
-            }
-          }
-        }
+      items.forEachIndexed { i, f ->
+        PdfFileCard(
+          file = f,
+          first = i == 0,
+          onOpen = { scope.launch { importIncoming(Uri.fromFile(File(f.path)))?.let { openFile(it.path, it.name) } } },
+          onShare = { },
+          onMore = { },
+          waiting = false,
+          showActions = false,
+        )
       }
     }
     if (hits.size > MAX_SHOWN) T(
