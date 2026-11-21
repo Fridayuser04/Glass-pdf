@@ -202,17 +202,15 @@ fun FilesTab() {
             }
             byDay(filtered) { it.modified }.forEachIndexed { gi, (label, items) ->
               GroupLabel(label, first = gi == 0)
-              Group {
-                items.forEachIndexed { i, f ->
-                  PdfFileCard(
-                    file = f,
-                    first = i == 0,
-                    onOpen = { openFile(f.path, f.name) },
-                    onShare = { share(f.path, f.name) },
-                    onMore = { menu = Menu.OfFile(f) },
-                    waiting = Backup.waiting(f.path, f.name),
-                  )
-                }
+              items.forEachIndexed { i, f ->
+                PdfFileCard(
+                  file = f,
+                  first = i == 0,
+                  onOpen = { openFile(f.path, f.name) },
+                  onShare = { share(f.path, f.name) },
+                  onMore = { menu = Menu.OfFile(f) },
+                  waiting = Backup.waiting(f.path, f.name),
+                )
               }
             }
           }
