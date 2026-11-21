@@ -253,10 +253,37 @@ fun ToolArt(id: String, size: Dp = 40.dp, modifier: Modifier = Modifier) {
 
 @Composable
 fun ArtTile(id: String, size: Dp = 44.dp, modifier: Modifier = Modifier, bg: Color = c.sunken) {
+  val glyph = when (id) {
+    "scan" -> I.cameraOutline
+    "workflow" -> I.viewGridOutline
+    "merge" -> I.plusBoxMultipleOutline
+    "alternate" -> I.swapHorizontal
+    "compress" -> I.resize
+    "split", "splitText", "splitBookmarks", "splitHalf", "splitSize" -> I.contentSaveOutline
+    "organize" -> I.viewGridOutline
+    "rotate" -> I.rotateRight
+    "flip" -> I.swapHorizontal
+    "nup" -> I.imageMultipleOutline
+    "crop" -> I.crop
+    "zip" -> I.folderZipOutline
+    "fillSign" -> I.drawPen
+    "watermark" -> I.formatText
+    "redact" -> I.eyeOffOutline
+    "ocr" -> I.textRecognition
+    "password" -> I.cellphoneLock
+    "unlock" -> I.cellphone
+    "metadata" -> I.informationOutline
+    "pageNumbers" -> I.fileDocumentOutline
+    "files" -> I.folderOutline
+    else -> I.filePdfBox
+  }
+  val shape = RoundedCornerShape(if (size > 50.dp) 18.dp else 12.dp)
   Box(
-    modifier.size(size).background(bg, RoundedCornerShape(if (size > 50.dp) Radius.card else Radius.tile)),
+    modifier.size(size).background(bg, shape),
     contentAlignment = Alignment.Center,
-  ) { ToolArt(id, size * 0.8f) }
+  ) {
+    Icon(glyph, size * 0.48f, c.accent)
+  }
 }
 
 enum class DocKind { Pdf, Zip, Doc, Jpg }
