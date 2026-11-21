@@ -341,16 +341,23 @@ fun PdfFileCard(
       runCatching {
         val descriptor = ParcelFileDescriptor.open(File(file.path), ParcelFileDescriptor.MODE_READ_ONLY)
         descriptor.use { fd ->
-          PdfRenderer(fd).use { renderer ->
-            if (renderer.pageCount < 1) return@use null
-            renderer.openPage(0).use { page ->
-              val width = 220
-              val height = (width * page.height.toFloat() / page.width).toInt().coerceAtLeast(1)
-              Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
-                bitmap.eraseColor(android.graphics.Color.WHITE)
-                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+          val renderer = PdfRenderer(fd)
+          try {
+            if (renderer.pageCount < 1) null else {
+              val page = renderer.openPage(0)
+              try {
+                val width = 220
+                val height = (width * page.height.toFloat() / page.width).toInt().coerceAtLeast(1)
+                Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
+                  bitmap.eraseColor(android.graphics.Color.WHITE)
+                  page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                }
+              } finally {
+                page.close()
               }
             }
+          } finally {
+            renderer.close()
           }
         }
       }.getOrNull()
