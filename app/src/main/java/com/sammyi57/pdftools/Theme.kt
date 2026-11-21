@@ -46,7 +46,7 @@ data class Palette(
 )
 
 val LightPalette = Palette(
-  bg = Color(0xFFF3F7FC), surface = Color(0xFFFFFFFF), sunken = Color(0xFFEAF1F8), page = Color(0xFFFFFFFF),
+  bg = Color(0xFFF3F7FC), surface = Color(0xF2FFFFFF), sunken = Color(0xFFEAF1F8), page = Color(0xFFFFFFFF),
   ink = Brand.cherry, sub = Color(0xFF63788F), faint = Color(0xFF9EAFBF), line = Color(0xFFDDE7F0),
   lineStrong = Color(0xFFC9D8E7), accent = Brand.tangerine, accentSoft = Color(0xFFDCEEFF), accentInk = Color(0xFF155AA6),
   onInk = Color(0xFFFFFFFF),
@@ -57,7 +57,7 @@ val LightPalette = Palette(
 
 // Midnight blue keeps the glass surfaces distinct without losing contrast.
 val DarkPalette = Palette(
-  bg = Color(0xFF080F1A), surface = Color(0xFF111C2A), sunken = Color(0xFF1A2A3C), page = Color(0xFF223247),
+  bg = Color(0xFF080F1A), surface = Color(0xE6111C2A), sunken = Color(0xFF1A2A3C), page = Color(0xFF223247),
   ink = Color(0xFFEAF4FF), sub = Color(0xFF9BB0C7), faint = Color(0xFF6E849B), line = Color(0xFF26384B),
   lineStrong = Color(0xFF354B61), accent = Color(0xFF66AEFF), accentSoft = Color(0xFF1B3551), accentInk = Color(0xFFB7D9FF),
   onInk = Color(0xFF081522),
