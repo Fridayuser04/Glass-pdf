@@ -18,9 +18,9 @@ import java.io.File
 // Cool blue is the primary accent; deep navy anchors text and navigation. Light is a clean blue-tinted
 // paper surface, while dark uses layered midnight blues. Glass panels use translucent blue-grey surfaces.
 object Brand {
-  val tangerine = Color(0xFF3186E8) // Kept as a stable token name for existing components.
-  val cherry = Color(0xFF102A43)
-  val cool = Color(0xFFDCEEFF)
+  val tangerine = Color(0xFF4D9FFF) // Electric blue accent for the AMOLED interface.
+  val cherry = Color(0xFF050608)
+  val cool = Color(0xFFB9D9FF)
 }
 
 @Immutable
@@ -57,12 +57,12 @@ val LightPalette = Palette(
 
 // Midnight blue keeps the glass surfaces distinct without losing contrast.
 val DarkPalette = Palette(
-  bg = Color(0xFF080F1A), surface = Color(0xE6111C2A), sunken = Color(0xFF1A2A3C), page = Color(0xFF223247),
-  ink = Color(0xFFEAF4FF), sub = Color(0xFF9BB0C7), faint = Color(0xFF6E849B), line = Color(0xFF26384B),
-  lineStrong = Color(0xFF354B61), accent = Color(0xFF66AEFF), accentSoft = Color(0xFF1B3551), accentInk = Color(0xFFB7D9FF),
-  onInk = Color(0xFF081522),
-  hero = listOf(Color(0xFF101E30), Color(0xFF174A79), Color(0xFF3186E8)),
-  panel = Color(0xE6111C2A), onPanel = Color(0xFFEAF4FF), onPanelSub = Color(0xFF9BB0C7),
+  bg = Color(0xFF000000), surface = Color(0xFF0D0F12), sunken = Color(0xFF15191F), page = Color(0xFF20252D),
+  ink = Color(0xFFF7F9FC), sub = Color(0xFF9AA4B2), faint = Color(0xFF626D7B), line = Color(0xFF20252D),
+  lineStrong = Color(0xFF2B323C), accent = Color(0xFF4D9FFF), accentSoft = Color(0xFF10243A), accentInk = Color(0xFFB9D9FF),
+  onInk = Color(0xFF000000),
+  hero = listOf(Color(0xFF080B10), Color(0xFF101B2A), Color(0xFF173B60)),
+  panel = Color(0xFF0D0F12), onPanel = Color(0xFFF7F9FC), onPanelSub = Color(0xFF9AA4B2),
   dark = true,
 )
 
