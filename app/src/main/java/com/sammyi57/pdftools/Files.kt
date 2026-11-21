@@ -302,7 +302,7 @@ fun FilesTab() {
 
 /** Large document card inspired by the supplied Files reference. The preview is rendered from page one locally. */
 @Composable
-private fun PdfFileCard(
+fun PdfFileCard(
   file: Saved,
   first: Boolean,
   onOpen: () -> Unit,
