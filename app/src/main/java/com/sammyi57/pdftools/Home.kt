@@ -130,7 +130,7 @@ fun Home() {
           T("All documents", Type.title, c.ink)
           T("${files.size} files on this device", Type.small, c.sub)
         }
-        IconBtn(I.refresh, 19.dp, c.sub, "Refresh files") { Store.refresh() }
+        IconBtn(I.sync, 19.dp, c.sub, "Refresh files") { Store.refreshOnly() }
       }
       if (files.isEmpty()) {
         T("Your PDFs and converted files will appear here.", Type.small, c.sub,
