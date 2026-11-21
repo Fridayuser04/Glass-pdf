@@ -70,10 +70,8 @@ fun Home() {
       verticalAlignment = Alignment.CenterVertically,
     ) {
       T(if (searching) "Search" else "Home", Type.largeTitle, modifier = Modifier.weight(1f))
-      IconBtn(I.magnify, 23.dp, c.ink, "Search") { q = if (q.isEmpty()) " " else "" }
       IconBtn(I.cogOutline, 22.dp, c.ink, "Settings") { nav.show(Tab.Settings) }
     }
-    if (q == " ") q = ""
     SearchField(q, { q = it }, "Search tools and documents…")
 
     if (!searching) {
