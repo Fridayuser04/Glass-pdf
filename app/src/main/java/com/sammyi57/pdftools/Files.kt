@@ -1,5 +1,17 @@
 package com.sammyi57.pdftools
 
+import androidx.compose.ui.layout.ContentScale
+
+import androidx.compose.ui.graphics.asImageBitmap
+
+import androidx.compose.foundation.Image
+
+import android.os.ParcelFileDescriptor
+
+import android.graphics.pdf.PdfRenderer
+
+import android.graphics.Bitmap
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -192,14 +204,14 @@ fun FilesTab() {
               GroupLabel(label, first = gi == 0)
               Group {
                 items.forEachIndexed { i, f ->
-                  ListRow(
-                    stem(f.name), first = i == 0, lead = { DocGlyph(kindOf(f.name)) }, marquee = true,
-                    subtitle = "${fmtSize(f.size)} · ${fmtTime(f.modified)}", onClick = { openFile(f.path, f.name) }, onLongClick = { menu = Menu.OfFile(f) },
-                  ) {
-                    // Only files still waiting to upload get a cloud: "Synced" is the normal state.
-                    if (Backup.waiting(f.path, f.name)) Icon(I.cloudUploadOutline, 17.dp, c.accent)
-                    IconBtn(I.dotsVertical, color = c.sub, label = "More") { menu = Menu.OfFile(f) }
-                  }
+                  PdfFileCard(
+                    file = f,
+                    first = i == 0,
+                    onOpen = { openFile(f.path, f.name) },
+                    onShare = { share(f.path, f.name) },
+                    onMore = { menu = Menu.OfFile(f) },
+                    waiting = Backup.waiting(f.path, f.name),
+                  )
                 }
               }
             }
@@ -286,6 +298,82 @@ fun FilesTab() {
   }
 
   exporting?.let { (pdf, word) -> ExportDialog(pdf, word) { exporting = null } }
+}
+
+/** Large document card inspired by the supplied Files reference. The preview is rendered from page one locally. */
+@Composable
+private fun PdfFileCard(
+  file: Saved,
+  first: Boolean,
+  onOpen: () -> Unit,
+  onShare: () -> Unit,
+  onMore: () -> Unit,
+  waiting: Boolean,
+) {
+  val shape = RoundedCornerShape(20.dp)
+  var preview by remember(file.path, file.modified) { mutableStateOf<Bitmap?>(null) }
+  LaunchedEffect(file.path, file.modified) {
+    preview = withContext(Dispatchers.IO) {
+      runCatching {
+        val descriptor = ParcelFileDescriptor.open(File(file.path), ParcelFileDescriptor.MODE_READ_ONLY)
+        descriptor.use { fd ->
+          PdfRenderer(fd).use { renderer ->
+            if (renderer.pageCount < 1) return@use null
+            renderer.openPage(0).use { page ->
+              val width = 220
+              val height = (width * page.height.toFloat() / page.width).toInt().coerceAtLeast(1)
+              Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
+                bitmap.eraseColor(android.graphics.Color.WHITE)
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+              }
+            }
+          }
+        }
+      }.getOrNull()
+    }
+  }
+  Row(
+    Modifier.fillMaxWidth().padding(top = if (first) 4.dp else 10.dp)
+      .shadow(5.dp, shape).clip(shape)
+      .background(c.surface, shape).border(0.7.dp, c.lineStrong, shape)
+      .tap(shape = shape, scaleTo = 0.985f, label = "Open ${stem(file.name)}", onClick = onOpen)
+      .padding(10.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Box(
+      Modifier.size(width = 86.dp, height = 108.dp).clip(RoundedCornerShape(14.dp))
+        .background(c.sunken),
+      contentAlignment = Alignment.Center,
+    ) {
+      if (preview != null) {
+        Image(preview!!.asImageBitmap(), "Preview of ${file.name}", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+      } else {
+        DocGlyph(kindOf(file.name), 54.dp)
+      }
+      Box(
+        Modifier.align(Alignment.TopEnd).background(c.panel, RoundedCornerShape(bottomStart = 10.dp))
+          .padding(horizontal = 8.dp, vertical = 4.dp),
+      ) { T(kindOf(file.name).name.uppercase(), Type.caption, c.onPanel) }
+    }
+    Column(Modifier.weight(1f).padding(start = 14.dp)) {
+      T(stem(file.name), Type.item, c.ink, maxLines = 2)
+      Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.background(c.sunken, RoundedCornerShape(6.dp)).padding(horizontal = 7.dp, vertical = 3.dp)) {
+          T(fmtDate(file.modified), Type.caption, c.ink)
+        }
+        T("  ·  ${fmtSize(file.size)}", Type.small, c.sub, maxLines = 1)
+      }
+      Row(
+        Modifier.fillMaxWidth().padding(top = 9.dp),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        if (waiting) Icon(I.cloudUploadOutline, 17.dp, c.accent)
+        IconBtn(I.shareVariantOutline, 18.dp, c.sub, "Share", onClick = onShare)
+        IconBtn(I.dotsVertical, 18.dp, c.sub, "More", onClick = onMore)
+      }
+    }
+  }
 }
 
 private val FOLDER_CARD = 128.dp
