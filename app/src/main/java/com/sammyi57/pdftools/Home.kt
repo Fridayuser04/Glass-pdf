@@ -56,6 +56,7 @@ private fun matches(target: String, tokens: List<String>) = target.lowercase().l
 fun Home() {
   val nav = LocalNav.current
   var q by rememberSaveable { mutableStateOf("") }
+  var showAllTools by rememberSaveable { mutableStateOf(false) }
   val files = remember(Store.version) { listAllFiles() }
   val tokens = q.trim().lowercase().split(Regex("\\s+")).filter { it.isNotEmpty() }
   val searching = tokens.isNotEmpty()
@@ -66,30 +67,76 @@ fun Home() {
 
   Screen {
     Row(
-      Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp),
+      Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 14.dp),
       verticalAlignment = Alignment.CenterVertically,
     ) {
-      T(if (searching) "Search" else "Home", Type.largeTitle, modifier = Modifier.weight(1f))
+      Column(Modifier.weight(1f)) {
+        T(if (searching) "Search" else "GLASS PDF", Type.largeTitle, c.ink)
+        if (!searching) T("Your documents. Your tools.", Type.small, c.sub)
+      }
       IconBtn(I.cogOutline, 22.dp, c.ink, "Settings") { nav.show(Tab.Settings) }
     }
     SearchField(q, { q = it }, "Search tools and documents…")
 
     if (!searching) {
-      QuickTools { id ->
-        if (id == "more") section = -1 else nav.tool(id)
-      }
       Row(
-        Modifier.fillMaxWidth().padding(top = 22.dp, bottom = 10.dp),
+        Modifier.fillMaxWidth().padding(top = 22.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
-        T("All documents", Type.title, modifier = Modifier.weight(1f))
-        T("${files.size}", Type.small, c.sub)
-        IconBtn(I.chevronRight, 18.dp, c.sub, "All files") { nav.show(Tab.Files) }
+        Column(Modifier.weight(1f)) {
+          T("All tools", Type.title, c.ink)
+          T("${TOOLS.count { it.id != "scan" }} tools to work with PDFs", Type.small, c.sub)
+        }
+        T(if (showAllTools) "Show less" else "View all", Type.label, c.accent,
+          Modifier.tap(scaleTo = 0.95f) { showAllTools = !showAllTools }.padding(horizontal = 10.dp, vertical = 8.dp))
+      }
+      QuickTools { id ->
+        if (id == "more") showAllTools = true else nav.tool(id)
+      }
+      if (showAllTools) {
+        Row(
+          Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 10.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          T("Browse by category", Type.title, c.ink, Modifier.weight(1f))
+          T("All", Type.small, c.accent, Modifier.tap { section = -1 }.padding(8.dp))
+        }
+        Row(
+          Modifier.horizontalScroll(rememberScrollState()),
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Chip("All tools", section == -1) { section = -1 }
+          sections.forEach { si -> Chip(SECTIONS[si], section == si) { section = si } }
+        }
+        SECTIONS.forEachIndexed { si, name ->
+          if (section != -1 && section != si) return@forEachIndexed
+          val items = TOOLS.filter { it.section == si && it.id != "scan" }
+          if (items.isNotEmpty()) {
+            Stagger(si + 2) {
+              Column(Modifier.padding(top = 14.dp)) {
+                GroupLabel("$name · ${items.size}")
+                ToolGrid(items) { nav.tool(it.id) }
+              }
+            }
+          }
+        }
+      }
+
+      Row(
+        Modifier.fillMaxWidth().padding(top = 26.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Column(Modifier.weight(1f)) {
+          T("All documents", Type.title, c.ink)
+          T("${files.size} files on this device", Type.small, c.sub)
+        }
+        IconBtn(I.refresh, 19.dp, c.sub, "Refresh files") { Store.refresh() }
       }
       if (files.isEmpty()) {
-        T("Your PDFs and converted files will appear here.", Type.small, c.sub, Modifier.fillMaxWidth().padding(vertical = 26.dp), align = TextAlign.Center)
+        T("Your PDFs and converted files will appear here.", Type.small, c.sub,
+          Modifier.fillMaxWidth().padding(vertical = 26.dp), align = TextAlign.Center)
       } else {
-        files.take(8).forEachIndexed { i, f ->
+        files.forEachIndexed { i, f ->
           PdfFileCard(
             file = f, first = i == 0, onOpen = { openFile(f.path, f.name) },
             onShare = { share(f.path, f.name) }, onMore = { nav.show(Tab.Files) },
@@ -97,46 +144,30 @@ fun Home() {
           )
         }
       }
-      Row(
-        Modifier.padding(top = 24.dp, bottom = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        T("PDF tools", Type.title, modifier = Modifier.weight(1f))
-        T("Browse all", Type.small, c.accent, Modifier.tap(scaleTo = 0.94f) { section = -1 }.padding(8.dp))
-      }
-      Row(
-        Modifier.horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-      ) {
-        Chip("All tools", section == -1) { section = -1 }
-        sections.forEach { si -> Chip(SECTIONS[si], section == si) { section = si } }
-      }
     }
 
-    if (searching && found.isNotEmpty()) {
-      GroupLabel("Documents", "All files", { nav.show(Tab.Files) })
-      found.take(8).forEachIndexed { i, f ->
-        PdfFileCard(
-          file = f, first = i == 0, onOpen = { openFile(f.path, f.name) },
-          onShare = { share(f.path, f.name) }, onMore = { nav.show(Tab.Files) },
-          waiting = Backup.waiting(f.path, f.name),
-        )
+    if (searching) {
+      if (found.isNotEmpty()) {
+        GroupLabel("Documents", "All files", { nav.show(Tab.Files) })
+        found.forEachIndexed { i, f ->
+          PdfFileCard(
+            file = f, first = i == 0, onOpen = { openFile(f.path, f.name) },
+            onShare = { share(f.path, f.name) }, onMore = { nav.show(Tab.Files) },
+            waiting = Backup.waiting(f.path, f.name),
+          )
+        }
       }
-    }
-
-    SECTIONS.forEachIndexed { si, name ->
-      if (!searching && section != -1 && section != si) return@forEachIndexed
-      val items = tools.filter { it.section == si && (searching || it.id != "scan") }
-      if (items.isEmpty()) return@forEachIndexed
-      Stagger(si + 2) {
-        Column {
+      SECTIONS.forEachIndexed { si, name ->
+        val items = tools.filter { it.section == si && it.id != "scan" }
+        if (items.isNotEmpty()) {
           GroupLabel("$name · ${items.size}")
           ToolGrid(items) { nav.tool(it.id) }
         }
       }
-    }
-    if (tools.isEmpty() && found.isEmpty()) {
-      T("No tools or files match \"${q.trim()}\".", Type.body, c.sub, Modifier.fillMaxWidth().padding(top = 40.dp, start = 24.dp, end = 24.dp), align = TextAlign.Center)
+      if (tools.isEmpty() && found.isEmpty()) {
+        T("No tools or files match \"${q.trim()}\".", Type.body, c.sub,
+          Modifier.fillMaxWidth().padding(top = 40.dp, start = 24.dp, end = 24.dp), align = TextAlign.Center)
+      }
     }
   }
 }
